@@ -1,0 +1,115 @@
+import os
+import json
+import numpy as np
+import torch
+from torch.utils.data import TensorDataset
+
+class Dictionary(object):
+    def __init__(self, path):
+        self.word2tkn = {}
+        self.tkn2word = []
+
+        self.label2idx = {}
+        self.idx2label = []
+
+        # 获取 label 的 映射
+        with open(os.path.join(path, 'labels.json'), 'r', encoding='utf-8') as f:
+            for line in f:
+                one_data = json.loads(line)
+                label, label_desc = one_data['label'], one_data['label_desc']
+                self.idx2label.append([label, label_desc])
+                self.label2idx[label] = len(self.idx2label) - 1
+
+    def add_word(self, word):
+        if word not in self.word2tkn:
+            self.tkn2word.append(word)
+            self.word2tkn[word] = len(self.tkn2word) - 1
+        return self.word2tkn[word]
+
+
+class Corpus(object):
+    '''
+    完成对数据集的读取和预处理，处理后得到所有文本数据的 tokens 表示及相应的标签。
+    
+    该类适用于任务一、任务二，若要完成任务三，需对整个类进行简化，只需调用预训练 tokenizer 即可将文本的数据全部转为 tokens 的数据。
+    '''
+    def __init__(self, path, max_sent_len):
+        self.dictionary = Dictionary(path)
+
+        self.max_sent_len = max_sent_len
+
+        self.train = self.tokenize(os.path.join(path, 'train.json'))
+        self.valid = self.tokenize(os.path.join(path, 'dev.json'))
+        self.test = self.tokenize(os.path.join(path, 'test.json'), True)
+
+        #-----------------------------------------------------begin-----------------------------------------------------#
+        # 若要采用预训练的 embedding, 需处理得到 token->embeddings 的映射矩阵
+
+
+        #------------------------------------------------------end------------------------------------------------------#
+
+    def pad(self, origin_sent):
+        '''
+        padding: 将一个 sentence 补 0 至预设的最大句长 self.max_sent_len
+        '''
+        if len(origin_sent) > self.max_sent_len:
+            return origin_sent[:self.max_sent_len]
+        else:
+            return origin_sent + [0 for _ in range(self.max_sent_len-len(origin_sent))]
+
+    def tokenize(self, path, test_mode=False):
+        '''
+        将数据集的每一个 sent 都转化成对应的 tokens. 
+        '''
+        with open(path, 'r', encoding='utf8') as f:
+            if test_mode:
+                idss = []
+                for line in f:
+                    one_data = json.loads(line)  # 读取一条数据
+                   
+                    sent = one_data['sentence']
+                    #-----------------------------------------------------begin-----------------------------------------------------#
+                    # 若要采用预训练的 embedding, 需在此处对 sent 进行分词
+
+
+                    #------------------------------------------------------end------------------------------------------------------#
+                    # 向词典中添加词
+                    for word in sent:
+                        self.dictionary.add_word(word)
+
+                    ids = []
+                    for word in sent:
+                        ids.append(self.dictionary.word2tkn[word])
+                    idss.append(self.pad(ids))
+
+                idss = torch.tensor(np.array(idss))
+
+                return TensorDataset(idss)
+
+            else:
+                idss = []
+                labels = []
+                for line in f:
+                    one_data = json.loads(line)  # 读取一条数据
+
+                    sent = one_data['sentence']
+                    label = one_data['label']
+                    #-----------------------------------------------------begin-----------------------------------------------------#
+                    # 若要采用预训练的 embedding, 需在此处对 sent 进行分词
+
+
+                    #------------------------------------------------------end------------------------------------------------------#
+                    # 向词典中添加词
+                    for word in sent:
+                        self.dictionary.add_word(word)
+
+                    ids = []
+                    for word in sent:
+                        ids.append(self.dictionary.word2tkn[word])
+                    idss.append(self.pad(ids))
+                    labels.append(self.dictionary.label2idx[label])
+
+                idss = torch.tensor(np.array(idss))
+                labels = torch.tensor(np.array(labels)).long()
+
+                return TensorDataset(idss, labels)
