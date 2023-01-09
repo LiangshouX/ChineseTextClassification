@@ -4,9 +4,9 @@
 
 ### 1. 模型结构
 
-​		Transformer是一个**Encoder-Decoder**结构的神经网络结构。Encoder将输入序列$(x_1, x_2,...x_n)$映射到一个连续表示序列$z=(z_1, z_2,...z_n)$，而对于编码得到的z，Decoder每次解码生成一个符号，直到生成完整的输出序列： $(y_1, y_2,...y_n)$ 。每一步解码的过程中，模型都是自回归的——即在生成下一个符号时将先前生成的符号作为附加输入。
+​		Transformer是一个**Encoder-Decoder**结构的神经网络结构。Encoder将输入序列 $(x_1, x_2,...x_n)$ 映射到一个连续表示序列 $z=(z_1, z_2,...z_n)$ ，而对于编码得到的z，Decoder每次解码生成一个符号，直到生成完整的输出序列： $(y_1, y_2,...y_n)$ 。每一步解码的过程中，模型都是自回归的——即在生成下一个符号时将先前生成的符号作为附加输入。
 
-​		下图是Transformer的示意图，左右两部分分别是Encoder和Decoder，$N\times$表示有N个相同的层(layer)，在原文《Attention is all you need》中，设定了N的值为6 。
+​		下图是Transformer的示意图，左右两部分分别是Encoder和Decoder， $N\times$ 表示有N个相同的层(layer)，在原文《Attention is all you need》中，设定了N的值为6 。
 
 ​		在Encoder中，每一个layer分别由两层组成：第一层是一个多头自注意机制层（multi-head self-attention mechanism），第二层是一个简单的positionwise fully connected前馈网络，在两个子层之间使用残差连接(residual connection)，之后再进行层归一化(layer normalization)。
 
@@ -22,9 +22,10 @@
 
 #### (1) Scaled Dot-Product Attention
 
-​		Transformer中对Attention机制的应用称为“Scaled Dot-Product Attention”，原理如图所示，输入包含$d_k$维的Query和Key，以及$d_v$维的Value。 首先分别计算Query与各个Key的点积，然后将每个点积除以$d_k$，最后使用Softmax函数来获得Key的权重。
+​		Transformer中对Attention机制的应用称为“Scaled Dot-Product Attention”，原理如图所示，输入包含 $d_k$ 维的Query和Key，以及 $d_v$ 维的Value。 首先分别计算Query与各个Key的点积，然后将每个点积除以 $d_k$ ，最后使用Softmax函数来获得Key的权重。
 
 ​		在具体实践中，将所有的Query、Key和Value向量分别组合成矩阵Q、K和V，从而能够加速运算，这样输出矩阵可以表示为：
+
 $$
 Attention(Q, K, V ) = softmax(\frac{QK^T}{\sqrt{d_k}})V
 $$
@@ -32,14 +33,16 @@ $$
 
 #### (2) Multi-Head Attention
 
-​		《Attention is All you need》中提出，将$d_{model}$维的query、key和value分别投影到$d_k, d_k,d_v$维k次，能够获得比对其执行单次的Attention效果要好。在投影之后，并行地执行Attention，生成一个$d_v$维的输出值，将这些输出值连接起来再次进行投影，产生最终值，如图所示。
+​		《Attention is All you need》中提出，将 $d_{model}$ 维的query、key和value分别投影到 $d_k, d_k,d_v$ 维k次，能够获得比对其执行单次的Attention效果要好。在投影之后，并行地执行Attention，生成一个 $d_v$ 维的输出值，将这些输出值连接起来再次进行投影，产生最终值，如图所示。
 
 ​		具体实践中 Multi-Head Attention的计算方式如下：
+
 $$
 MultiHead(Q,K,V)=Concat(head_1,...head_h)W^O \\
 其中head_i=Attention(QW_i^Q,KW_i^K,VW_i^V),\quad W_i^{Q、K、V}\in \mathbb{R}^{d_{model} \times d_{k、k、v}}
 $$
-​		原文中有如下的设置：$h=8,\quad d_k=d_v=d_{model}/h=64$ 。
+
+​		原文中有如下的设置： $h=8,\quad d_k=d_v=d_{model}/h=64$ 。
 
 
 
